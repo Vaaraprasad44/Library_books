@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.3.1" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>8dc21aca-6d09-4de3-a296-33174cc8b769</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ApiService/ApiService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.3.1" />
+    <PackageReference Include="Aspire.Hosting.Python" Version="9.3.1" />
+  </ItemGroup>
+
+  <!-- Restore pnpm packages for web projects during build -->
+  <Target Name="RestorePnpm" BeforeTargets="BeforeBuild;ResolveProjectReferences" Condition=" '$(DesignTimeBuild)' != 'true' ">
+    <ItemGroup>
+      <PackageJsons Include="..\*\package.json" />
+    </ItemGroup>
+    <!-- Install pnpm packages if node_modules is missing -->
+    <Message Importance="Normal" Text="Installing pnpm packages for %(PackageJsons.RelativeDir)" Condition="!Exists('%(PackageJsons.RootDir)%(PackageJsons.Directory)/node_modules')" />
+    <Exec Command="pnpm install" WorkingDirectory="%(PackageJsons.RootDir)%(PackageJsons.Directory)" Condition="!Exists('%(PackageJsons.RootDir)%(PackageJsons.Directory)/node_modules')" />
+  </Target>
+
+  <Target Name="RestorePython" BeforeTargets="Build" Condition="'$DesignTimeBuild' != 'true' ">
+    <ItemGroup>
+      <RequirementsTxtFiles Include="..\*\requirements.txt" />
+    </ItemGroup>
+    <!-- Check for requirements.txt and install dependencies -->
+    <Message Importance="Normal" Text="Checking for and installing Python dependencies for %(RequirementsTxtFiles.RelativeDir)" Condition="Exists('%(RequirementsTxtFiles.FullPath)')" />
+    <Exec Command="python -m venv .venv" WorkingDirectory="%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory)" Condition="!Exists('%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory)/.venv')" />
+    <!-- Determine the correct pip path based on folder structure -->
+    <PropertyGroup>
+      <PipPath Condition="Exists('%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory).venv/Scripts')">%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory).venv/Scripts/pip</PipPath>
+      <PipPath Condition="Exists('%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory).venv/bin')">%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory).venv/bin/pip</PipPath>
+    </PropertyGroup>
+    <!-- Use the absolute pip path to install dependencies -->
+    <Exec Command="$(PipPath) install -r %(RequirementsTxtFiles.FullPath)" WorkingDirectory="%(RequirementsTxtFiles.RootDir)%(RequirementsTxtFiles.Directory)" />
+  </Target>
+</Project>
