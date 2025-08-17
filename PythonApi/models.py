@@ -2,16 +2,38 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class TodoItem(BaseModel):
+class Book(BaseModel):
     id: int
-    title: Optional[str] = None
-    isComplete: bool = False
-
-
-class CreateTodoCommand(BaseModel):
     title: str
+    author: str
+    isbn: Optional[str] = None
+    publication_year: Optional[int] = None
+    publisher: Optional[str] = None
+    genre: Optional[str] = None
+    pages: Optional[int] = None
+    rating: Optional[float] = None
+    description: Optional[str] = None
 
 
-class UpdateTodoCommand(BaseModel):
+class CreateBookCommand(BaseModel):
     title: str
-    isComplete: bool
+    author: str
+    isbn: Optional[str] = None
+    publication_year: Optional[int] = None
+    publisher: Optional[str] = None
+    genre: Optional[str] = None
+    pages: Optional[int] = None
+    rating: Optional[float] = None
+    description: Optional[str] = None
+
+
+class UpdateBookCommand(BaseModel):
+    title: str
+    author: str
+    isbn: Optional[str] = None
+    publication_year: Optional[int] = None
+    publisher: Optional[str] = None
+    genre: Optional[str] = None
+    pages: Optional[int] = None
+    rating: Optional[float] = None
+    description: Optional[str] = None
