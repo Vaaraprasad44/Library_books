@@ -4,6 +4,7 @@ import "./globals.css";
 
 import ReduxProvider from "@/store/redux-provider";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { ToReadProvider } from "@/contexts/to-read-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <ReduxProvider>{children}</ReduxProvider>
+          <ToReadProvider>
+            <ReduxProvider>{children}</ReduxProvider>
+          </ToReadProvider>
         </ThemeProvider>
       </body>
     </html>

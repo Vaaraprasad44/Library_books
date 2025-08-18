@@ -8,11 +8,13 @@ import { FilterDropdown, FilterOptions } from "./filter-dropdown";
 
 export type SortOption = 'title' | 'author' | 'rating' | 'year' | 'pages';
 export type SortDirection = 'asc' | 'desc';
+export type ViewMode = 'grid' | 'list';
 
 interface LibraryHeaderProps {
   onSearch?: (query: string) => void;
   onSort?: (sort: SortOption, direction: SortDirection) => void;
   onFilter?: (filters: FilterOptions) => void;
+  onViewModeChange?: (mode: ViewMode) => void;
   totalBooks?: number;
   availableGenres?: string[];
 }
@@ -21,11 +23,17 @@ export function LibraryHeader({
   onSearch, 
   onSort, 
   onFilter, 
+  onViewModeChange,
   totalBooks = 0, 
   availableGenres = [] 
 }: LibraryHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    onViewModeChange?.(mode);
+  };
   const [sortBy, setSortBy] = useState<SortOption>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -86,20 +94,20 @@ export function LibraryHeader({
 
         <div className="flex items-center space-x-2">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-md p-1">
+          <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode('grid')}
-              className="h-8 w-8 p-0"
+              onClick={() => handleViewModeChange('grid')}
+              className={`h-8 w-8 p-0 ${viewMode !== 'grid' ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200' : ''}`}
             >
               <Grid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 w-8 p-0"
+              onClick={() => handleViewModeChange('list')}
+              className={`h-8 w-8 p-0 ${viewMode !== 'list' ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200' : ''}`}
             >
               <List className="h-4 w-4" />
             </Button>

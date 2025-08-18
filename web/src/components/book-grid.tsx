@@ -4,21 +4,63 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useGetBooksQuery, useSearchBooksQuery } from "@/store/api";
 import { Book } from "@/store/api/generated/books";
-import { SortOption, SortDirection } from "./library-header";
+import { SortOption, SortDirection, ViewMode } from "./library-header";
 import { FilterOptions } from "./filter-dropdown";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BookCardProps {
   book: Book;
+  viewMode: ViewMode;
 }
 
-function BookCard({ book }: BookCardProps) {
+function BookCard({ book, viewMode }: BookCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
     router.push(`/book/${book.id}`);
   };
+
+  if (viewMode === 'list') {
+    return (
+      <div className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow" onClick={handleClick}>
+        <div className="flex space-x-4">
+          {/* Book Cover */}
+          <div className="w-16 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex-shrink-0 flex items-center justify-center">
+            <div className="text-white text-xs text-center p-1">
+              <div className="line-clamp-2 font-medium">{book.title}</div>
+            </div>
+          </div>
+          
+          {/* Book Info */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">{book.title}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{book.author}</p>
+            
+            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+              {book.genre && (
+                <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs">
+                  {book.genre}
+                </span>
+              )}
+              {book.publication_year && <span>{book.publication_year}</span>}
+              {book.pages && <span>{book.pages} pages</span>}
+              {book.rating && (
+                <div className="flex items-center space-x-1">
+                  <span className="text-yellow-500 dark:text-yellow-400">★</span>
+                  <span>{book.rating}</span>
+                </div>
+              )}
+            </div>
+            
+            {book.description && (
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{book.description}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group cursor-pointer" onClick={handleClick}>
@@ -50,11 +92,12 @@ interface BookGridProps {
   sortBy?: SortOption;
   sortDirection?: SortDirection;
   filters?: FilterOptions;
+  viewMode?: ViewMode;
 }
 
 const BOOKS_PER_PAGE = 24;
 
-export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc', filters = {} }: BookGridProps) {
+export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc', filters = {}, viewMode = 'grid' }: BookGridProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const { data: allBooks, isLoading: isLoadingAll, isError: isErrorAll } = useGetBooksQuery();
   const { data: searchResults, isLoading: isLoadingSearch, isError: isErrorSearch } = useSearchBooksQuery(
@@ -199,10 +242,10 @@ export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc',
 
   return (
     <div className="space-y-6">
-      {/* Books Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {/* Books Display */}
+      <div className={viewMode === 'list' ? "space-y-4" : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"}>
         {paginatedBooks.map((book) => (
-          <BookCard key={book.id} book={book} />
+          <BookCard key={book.id} book={book} viewMode={viewMode} />
         ))}
       </div>
 

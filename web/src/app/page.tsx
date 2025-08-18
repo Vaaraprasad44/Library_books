@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useGetBooksQuery, useSearchBooksQuery } from "@/store/api";
 import { LibrarySidebar } from "@/components/library-sidebar";
-import { LibraryHeader, SortOption, SortDirection } from "@/components/library-header";
+import { LibraryHeader, SortOption, SortDirection, ViewMode } from "@/components/library-header";
 import { BookGrid } from "@/components/book-grid";
 import { FilterOptions } from "@/components/filter-dropdown";
 
@@ -13,6 +13,7 @@ export default function LibraryPage() {
     const [sortBy, setSortBy] = useState<SortOption>('title');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const [filters, setFilters] = useState<FilterOptions>({});
+    const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
     const { data: searchResults } = useSearchBooksQuery(
         { title: searchQuery || '' },
@@ -30,6 +31,10 @@ export default function LibraryPage() {
 
     const handleFilter = (newFilters: FilterOptions) => {
         setFilters(newFilters);
+    };
+
+    const handleViewModeChange = (mode: ViewMode) => {
+        setViewMode(mode);
     };
 
     // Calculate filtered count for header
@@ -83,6 +88,7 @@ export default function LibraryPage() {
                             onSearch={handleSearch}
                             onSort={handleSort}
                             onFilter={handleFilter}
+                            onViewModeChange={handleViewModeChange}
                             totalBooks={filteredCount}
                             availableGenres={availableGenres}
                         />
@@ -92,6 +98,7 @@ export default function LibraryPage() {
                                 sortBy={sortBy}
                                 sortDirection={sortDirection}
                                 filters={filters}
+                                viewMode={viewMode}
                             />
                         </div>
                     </div>
