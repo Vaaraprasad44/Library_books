@@ -7,6 +7,7 @@ import { LibrarySidebar } from "@/components/library-sidebar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookmarkPlus, X } from "lucide-react";
 import { Book } from "@/store/api/generated/books";
+import { useToRead } from "@/contexts/to-read-context";
 
 interface ToReadBookCardProps {
   book: Book;
@@ -73,10 +74,10 @@ function ToReadBookCard({ book, onRemove }: ToReadBookCardProps) {
 export default function ToReadPage() {
   const router = useRouter();
   const { data: allBooks } = useGetBooksQuery();
-  const [toReadBooks, setToReadBooks] = useState<Book[]>([]);
+  const { toReadBooks, addToReadBook, removeFromReadBook, isInToReadList } = useToRead();
 
   const handleRemoveBook = (bookId: number) => {
-    setToReadBooks(prev => prev.filter(book => book.id !== bookId));
+    removeFromReadBook(bookId);
   };
 
   return (
@@ -155,11 +156,11 @@ export default function ToReadPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          if (!toReadBooks.find(b => b.id === book.id)) {
-                            setToReadBooks(prev => [...prev, book]);
+                          if (!isInToReadList(book.id)) {
+                            addToReadBook(book);
                           }
                         }}
-                        disabled={toReadBooks.some(b => b.id === book.id)}
+                        disabled={isInToReadList(book.id)}
                       >
                         <BookmarkPlus className="h-3 w-3" />
                       </Button>

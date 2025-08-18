@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useGetBookByIdQuery } from "@/store/api";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, BookOpen, Check, Plus } from "lucide-react";
+import { useToRead } from "@/contexts/to-read-context";
 
 export default function BookDetailPage() {
   const params = useParams();
@@ -13,7 +14,9 @@ export default function BookDetailPage() {
   
   const { data: book, isLoading, isError, error } = useGetBookByIdQuery({ id: bookId });
   const [hasRead, setHasRead] = useState(false);
-  const [isInToReadList, setIsInToReadList] = useState(false);
+  const { addToReadBook, removeFromReadBook, isInToReadList } = useToRead();
+  
+  const bookInToRead = book ? isInToReadList(book.id) : false;
 
   if (isLoading) {
     return (
@@ -90,16 +93,24 @@ export default function BookDetailPage() {
                 
                 <Button
                   variant="outline"
-                  onClick={() => setIsInToReadList(!isInToReadList)}
+                  onClick={() => {
+                    if (book) {
+                      if (bookInToRead) {
+                        removeFromReadBook(book.id);
+                      } else {
+                        addToReadBook(book);
+                      }
+                    }
+                  }}
                   className={`w-full flex items-center justify-center space-x-2 ${
-                    isInToReadList 
-                      ? 'border-orange-500 text-orange-700 bg-orange-50' 
+                    bookInToRead 
+                      ? 'border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-400' 
                       : ''
                   }`}
                 >
                   <Plus className="h-4 w-4" />
                   <span>
-                    {isInToReadList ? 'Remove from To-Read' : 'Add to To-Read List'}
+                    {bookInToRead ? 'Remove from To-Read' : 'Add to To-Read List'}
                   </span>
                 </Button>
               </div>
@@ -185,7 +196,7 @@ export default function BookDetailPage() {
                   </span>
                 )}
                 
-                {isInToReadList && (
+                {bookInToRead && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">
                     <Plus className="h-3 w-3 mr-1" />
                     To Read
