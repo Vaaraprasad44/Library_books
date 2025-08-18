@@ -1,71 +1,69 @@
 'use client'
 
-import { useState } from "react";
-import { useGetTodosQuery, useCreateTodoMutation, useUpdateTodoMutation, useDeleteTodoMutation } from "@/store/api/enhanced/todos";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useMemo } from "react";
+import { useGetBooksQuery } from "@/store/api";
+import { LibrarySidebar } from "@/components/library-sidebar";
+import { LibraryHeader, SortOption, SortDirection } from "@/components/library-header";
+import { BookGrid } from "@/components/book-grid";
+import { FilterOptions } from "@/components/filter-dropdown";
 
-export default function TodosPage() {
-    const { data: todos, isLoading, isError } = useGetTodosQuery();
-    const [createTodo] = useCreateTodoMutation();
-    const [updateTodo] = useUpdateTodoMutation();
-    const [deleteTodo] = useDeleteTodoMutation();
-    const [newTodoTitle, setNewTodoTitle] = useState("");
+export default function LibraryPage() {
+    const { data: books } = useGetBooksQuery();
+    const [searchQuery, setSearchQuery] = useState("");
+    const [sortBy, setSortBy] = useState<SortOption>('title');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const [filters, setFilters] = useState<FilterOptions>({});
 
-    if (isLoading) {
-        return <div>Loading...</div>;
-    }
-
-    if (isError || !todos) {
-        return <div>Error loading todos.</div>;
-    }
-
-    const handleCreateTodo = () => {
-        if (newTodoTitle.trim()) {
-            createTodo({ createTodoCommand: { title: newTodoTitle } });
-            setNewTodoTitle("");
-        }
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
     };
 
+    const handleSort = (sort: SortOption, direction: SortDirection) => {
+        setSortBy(sort);
+        setSortDirection(direction);
+    };
+
+    const handleFilter = (newFilters: FilterOptions) => {
+        setFilters(newFilters);
+    };
+
+    // Get available genres for filter dropdown
+    const availableGenres = useMemo(() => {
+        if (!books) return [];
+        const genres = new Set<string>();
+        books.forEach(book => {
+            if (book.genre) genres.add(book.genre);
+        });
+        return Array.from(genres).sort();
+    }, [books]);
+
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Todos</h1>
-            <div className="flex w-full max-w-sm items-center space-x-2 mb-4">
-                <Input
-                    type="text"
-                    placeholder="Add a new todo"
-                    value={newTodoTitle}
-                    onChange={(e) => setNewTodoTitle(e.target.value)}
-                />
-                <Button onClick={handleCreateTodo}>Add Todo</Button>
+        <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+            {/* Sidebar */}
+            <LibrarySidebar />
+            
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-auto">
+                    <div className="p-6">
+                        <LibraryHeader 
+                            onSearch={handleSearch}
+                            onSort={handleSort}
+                            onFilter={handleFilter}
+                            totalBooks={books?.length || 0}
+                            availableGenres={availableGenres}
+                        />
+                        <div className="mt-6">
+                            <BookGrid 
+                                searchQuery={searchQuery}
+                                sortBy={sortBy}
+                                sortDirection={sortDirection}
+                                filters={filters}
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[50px]">Complete</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {todos.map((todo) => (
-                        <TableRow key={todo.id}>
-                            <TableCell>
-                                <Checkbox
-                                    checked={todo.isComplete!}
-                                    onCheckedChange={() => updateTodo({ id: todo.id!, updateTodoCommand: { id: todo.id!, title: todo.title ?? "", isComplete: !todo.isComplete } })}
-                                />
-                            </TableCell>
-                            <TableCell>{todo.title}</TableCell>
-                            <TableCell>
-                                <Button variant="destructive" onClick={() => deleteTodo({ id: todo.id! })}>Delete</Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
         </div>
     );
 }
