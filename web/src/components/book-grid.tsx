@@ -1,11 +1,13 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useGetBooksQuery, useSearchBooksQuery } from "@/store/api";
 import { Book } from "@/store/api/generated/books";
 import { SortOption, SortDirection } from "./library-header";
 import { FilterOptions } from "./filter-dropdown";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BookCardProps {
   book: Book;
@@ -50,7 +52,10 @@ interface BookGridProps {
   filters?: FilterOptions;
 }
 
+const BOOKS_PER_PAGE = 24;
+
 export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc', filters = {} }: BookGridProps) {
+  const [currentPage, setCurrentPage] = useState(1);
   const { data: allBooks, isLoading: isLoadingAll, isError: isErrorAll } = useGetBooksQuery();
   const { data: searchResults, isLoading: isLoadingSearch, isError: isErrorSearch } = useSearchBooksQuery(
     { title: searchQuery || '' },
@@ -63,8 +68,8 @@ export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc',
   const isError = searchQuery ? isErrorSearch : isErrorAll;
 
   // Apply filters and sorting
-  const books = useMemo(() => {
-    if (!rawBooks) return [];
+  const { allFilteredBooks, paginatedBooks, totalPages } = useMemo(() => {
+    if (!rawBooks) return { allFilteredBooks: [], paginatedBooks: [], totalPages: 0 };
 
     let filteredBooks = [...rawBooks];
 
@@ -114,8 +119,19 @@ export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc',
       return sortDirection === 'desc' ? -comparison : comparison;
     });
 
-    return filteredBooks;
-  }, [rawBooks, filters, sortBy, sortDirection]);
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredBooks.length / BOOKS_PER_PAGE);
+    const startIndex = (currentPage - 1) * BOOKS_PER_PAGE;
+    const endIndex = startIndex + BOOKS_PER_PAGE;
+    const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
+
+    return { allFilteredBooks: filteredBooks, paginatedBooks, totalPages };
+  }, [rawBooks, filters, sortBy, sortDirection, currentPage]);
+
+  // Reset to page 1 when filters or search change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filters, sortBy, sortDirection]);
 
   if (isLoading) {
     return (
@@ -125,7 +141,7 @@ export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc',
     );
   }
 
-  if (isError || !books) {
+  if (isError || !paginatedBooks) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-red-500 dark:text-red-400">Error loading books.</div>
@@ -133,7 +149,7 @@ export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc',
     );
   }
 
-  if (books.length === 0) {
+  if (allFilteredBooks.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-500 dark:text-gray-400">
@@ -143,11 +159,99 @@ export function BookGrid({ searchQuery, sortBy = 'title', sortDirection = 'asc',
     );
   }
 
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  };
+
+  const handlePageClick = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Generate page numbers to display
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      let start = Math.max(1, currentPage - halfVisible);
+      let end = Math.min(totalPages, start + maxVisiblePages - 1);
+      
+      if (end - start < maxVisiblePages - 1) {
+        start = Math.max(1, end - maxVisiblePages + 1);
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-      {books.map((book) => (
-        <BookCard key={book.id} book={book} />
-      ))}
+    <div className="space-y-6">
+      {/* Books Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {paginatedBooks.map((book) => (
+          <BookCard key={book.id} book={book} />
+        ))}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            Showing {((currentPage - 1) * BOOKS_PER_PAGE) + 1} to {Math.min(currentPage * BOOKS_PER_PAGE, allFilteredBooks.length)} of {allFilteredBooks.length} books
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className="flex items-center space-x-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Previous</span>
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {generatePageNumbers().map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageClick(page)}
+                  className="w-10"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="flex items-center space-x-1"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

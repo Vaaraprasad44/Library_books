@@ -10,7 +10,7 @@ export function LibrarySidebar() {
         <div className="flex items-center space-x-2">
           <Book className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           <span className="text-xl font-semibold text-gray-900 dark:text-white">MK's Library</span>
-          <BookOpen className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <BookOpen className="h-4 w-4 text-gray-400 dark\:text-gray-500" />
         </div>
       </div>
 
